@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NFC Reader & Converter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h2>QUÉT THẺ NFC</h2>
+    <button id="scanBtn" style="padding: 15px 30px; font-size: 18px;">Bắt đầu quét</button>
+    <div style="margin-top: 30px;">
+        <p>Mã Hex gốc: <b id="hexRaw">-</b></p>
+        <p>Mã DEC đảo ngược: <h1 id="decResult" style="color: green;">-</h1></p>
+    </div>
+
+    <script>
+        document.getElementById('scanBtn').addEventListener('click', async () => {
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    document.getElementById('hexRaw').innerText = "Đang chờ quẹt thẻ...";
+                    
+                    ndef.addEventListener("readingerror", () => {
+                        alert("Lỗi khi đọc thẻ NFC.");
+                    });
+
+                    ndef.addEventListener("reading", ({ serialNumber }) => {
+                        // serialNumber dạng "34:4e:f5:23"
+                        document.getElementById('hexRaw').innerText = serialNumber;
+                        
+                        // Tách chuỗi hex thành mảng byte
+                        let bytes = serialNumber.split(':');
+                        
+                        // Đảo ngược mảng byte (Little Endian)
+                        let reversedHex = bytes.reverse().join('');
+                        
+                        // Chuyển sang Dec
+                        let decValue = parseInt(reversedHex, 16);
+                        
+                        document.getElementById('decResult').innerText = decValue;
+                    });
+                } catch (error) {
+                    alert("Lỗi: " + error);
+                }
+            } else {
+                alert("Trình duyệt không hỗ trợ Web NFC. Hãy dùng Google Chrome trên Android!");
+            }
+        });
+    </script>
+</body>
+</html>
