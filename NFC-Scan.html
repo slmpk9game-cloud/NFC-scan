@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đọc & Phân Tích Thẻ NFC</title>
+    <title>NFC Tool</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             text-align: center;
-            padding: 20px 15px;
+            padding: 15px 10px;
             background-color: #f5f5f7;
             color: #1d1d1f;
         }
@@ -30,27 +30,26 @@
             border-radius: 12px;
             cursor: pointer;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            transition: background-color 0.2s;
         }
-        /* Style cho hệ thống Tabs */
         .tab-buttons {
             display: flex;
             background: #e5e5ea;
             border-radius: 10px;
             padding: 3px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 8px 4px;
             border: none;
             background: transparent;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
             color: #666;
-            transition: all 0.2s;
         }
         .tab-btn.active {
             background: #ffffff;
@@ -64,15 +63,14 @@
         .tab-content.active {
             display: block;
         }
-        /* Style nội dung hiển thị */
         .result-box {
             background: #f2f2f7;
-            padding: 15px;
+            padding: 12px 15px;
             border-radius: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .label {
-            font-size: 13px;
+            font-size: 12px;
             color: #86868b;
             margin-bottom: 4px;
         }
@@ -81,45 +79,64 @@
             font-size: 16px;
             color: #333;
         }
-        /* Hộp chứa kết quả DEC và Nút Copy */
         .dec-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 4px;
         }
         .val-dec {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             color: #34c759;
             word-break: break-all;
         }
-        .copy-btn {
+        .copy-btn, .action-btn {
             background-color: #34c759;
             color: white;
             border: none;
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 8px 14px;
+            font-size: 13px;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
             white-space: nowrap;
-            margin-left: 10px;
         }
-        .copy-btn:active {
-            background-color: #28a745;
+        input.text-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            margin-bottom: 10px;
         }
         pre {
             background: #1c1c1e;
             color: #00ff66;
-            padding: 12px;
+            padding: 10px;
             border-radius: 10px;
-            font-size: 12px;
+            font-size: 11px;
             white-space: pre-wrap;
             word-break: break-all;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
         }
     </style>
 </head>
@@ -128,10 +145,11 @@
         <h2>BỘ ĐỌC THẺ NFC</h2>
         <button class="scan-btn" id="scanBtn"> Bắt Đầu Quét</button>
 
-        <!-- Thanh chuyển Tab -->
         <div class="tab-buttons">
-            <button class="tab-btn active" onclick="switchTab('tab-convert', event)">Chuyển Đổi Mã</button>
-            <button class="tab-btn" onclick="switchTab('tab-raw', event)">Chi Tiết Raw Data</button>
+            <button class="tab-btn active" onclick="switchTab('tab-convert', event)">Chuyển Đổi</button>
+            <button class="tab-btn" onclick="switchTab('tab-raw', event)">Raw Data</button>
+            <button class="tab-btn" onclick="switchTab('tab-history', event)">Lịch Sử</button>
+            <button class="tab-btn" onclick="switchTab('tab-write', event)">Ghi Thẻ</button>
         </div>
 
         <!-- TAB 1: Chuyển đổi mã -->
@@ -145,111 +163,151 @@
                 <div class="label">Mã DEC đảo ngược (Little-Endian):</div>
                 <div class="dec-container">
                     <div class="val-dec" id="decResult">0</div>
-                    <button class="copy-btn" id="copyBtn" onclick="copyDecValue()"> Copy</button>
+                    <button class="copy-btn" id="copyBtn" onclick="copyDecValue()">Copy</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: Chi tiết tất cả dữ liệu NFC -->
+        <!-- TAB 2: Chi tiết Raw Data -->
         <div id="tab-raw" class="tab-content">
             <div class="result-box">
                 <div class="label">Thông tin đầy đủ từ thẻ:</div>
-                <pre id="rawOutput">Bấm "Bắt Đầu Quét" và chạm thẻ vào mặt lưng thiết bị để xem dữ liệu...</pre>
+                <pre id="rawOutput">Chưa có dữ liệu...</pre>
+            </div>
+        </div>
+
+        <!-- TAB 3: Lịch sử quét -->
+        <div id="tab-history" class="tab-content">
+            <div class="result-box">
+                <div class="label">Danh sách thẻ đã quét gần đây:</div>
+                <ul class="history-list" id="historyList">
+                    <li style="color: #86868b; font-size: 12px; text-align: center; padding: 10px;">Chưa có lịch sử quét</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TAB 4: Ghi thẻ NFC -->
+        <div id="tab-write" class="tab-content">
+            <div class="result-box">
+                <div class="label">Nhập nội dung cần ghi vào thẻ (Text/URL):</div>
+                <input type="text" id="writeInput" class="text-input" placeholder="Ví dụ: https://google.com hoặc 123456">
+                <button class="action-btn" style="width: 100%; background-color: #ff9500;" onclick="writeNfcTag()"> Ghi Vào Thẻ NFC</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Hàm chuyển đổi tab
         function switchTab(tabId, evt) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             evt.currentTarget.classList.add('active');
         }
 
-        // Hàm Copy mã DEC vào Clipboard
-        function copyDecValue() {
-            const decValue = document.getElementById('decResult').innerText;
-            if (decValue === "0" || decValue === "") {
-                alert("Chưa có mã DEC để sao chép!");
-                return;
-            }
+        function copyDecValue(valueToCopy) {
+            const decValue = valueToCopy || document.getElementById('decResult').innerText;
+            if (decValue === "0" || decValue === "") return;
 
             navigator.clipboard.writeText(decValue).then(() => {
-                const copyBtn = document.getElementById('copyBtn');
-                const originalText = copyBtn.innerText;
-                
-                // Hiển thị phản hồi trực quan khi đã copy
-                copyBtn.innerText = " Đã chép!";
-                copyBtn.style.backgroundColor = "#0071e3";
-                
-                setTimeout(() => {
-                    copyBtn.innerText = originalText;
-                    copyBtn.style.backgroundColor = "#34c759";
-                }, 1500);
-            }).catch(err => {
-                alert("Không thể sao chép: " + err);
+                if (!valueToCopy) {
+                    const copyBtn = document.getElementById('copyBtn');
+                    copyBtn.innerText = "Đã chép!";
+                    copyBtn.style.backgroundColor = "#0071e3";
+                    setTimeout(() => {
+                        copyBtn.innerText = "Copy";
+                        copyBtn.style.backgroundColor = "#34c759";
+                    }, 1500);
+                } else {
+                    alert("Đã sao chép mã: " + decValue);
+                }
             });
         }
 
-        // Đọc NFC & Xử lý dữ liệu
+        // Đọc NFC
         document.getElementById('scanBtn').addEventListener('click', async () => {
-            if ('NDEFReader' in window) {
-                try {
-                    const ndef = new NDEFReader();
-                    await ndef.scan();
-                    document.getElementById('hexRaw').innerText = "Hãy chạm thẻ vào lưng máy...";
-                    document.getElementById('rawOutput').innerText = "Đang chờ quét thẻ...";
-                    
-                    ndef.addEventListener("readingerror", () => {
-                        alert("Không thể đọc thẻ. Vui lòng thử lại!");
-                    });
-
-                    ndef.addEventListener("reading", ({ serialNumber, message }) => {
-                        // 1. XỬ LÝ CHUYỂN ĐỔI (TAB 1)
-                        document.getElementById('hexRaw').innerText = serialNumber || "Không có UID";
-                        
-                        let decValue = 0;
-                        if (serialNumber) {
-                            let bytes = serialNumber.split(':');
-                            let reversedHex = bytes.reverse().join('');
-                            decValue = parseInt(reversedHex, 16);
-                        }
-                        document.getElementById('decResult').innerText = decValue;
-
-                        // 2. XỬ LÝ DỮ LIỆU RAW CHI TIẾT (TAB 2)
-                        let rawInfo = {
-                            "Mã UID (Serial Number)": serialNumber || "N/A",
-                            "Thời gian quét": new Date().toLocaleString("vi-VN"),
-                            "Số lượng bản ghi NDEF (Records)": message.records.length,
-                            "Nội dung bản ghi": []
-                        };
-
-                        for (const record of message.records) {
-                            let recordData = {
-                                "Record Type": record.recordType,
-                                "Media Type": record.mediaType || "N/A",
-                                "Encoding": record.encoding || "N/A"
-                            };
-
-                            if (record.data) {
-                                const decoder = new TextDecoder(record.encoding || 'utf-8');
-                                recordData["Payload Text"] = decoder.decode(record.data);
-                            }
-                            rawInfo["Nội dung bản ghi"].push(recordData);
-                        }
-
-                        document.getElementById('rawOutput').innerText = JSON.stringify(rawInfo, null, 2);
-                    });
-                } catch (error) {
-                    alert("Lỗi cấp quyền hoặc kết nối: " + error);
-                }
-            } else {
+            if (!('NDEFReader' in window)) {
                 alert("Trình duyệt không hỗ trợ Web NFC. Hãy dùng Google Chrome trên Android!");
+                return;
+            }
+
+            try {
+                const ndef = new NDEFReader();
+                await ndef.scan();
+                document.getElementById('hexRaw').innerText = "Hãy chạm thẻ vào lưng máy...";
+                
+                ndef.addEventListener("readingerror", () => {
+                    alert("Không thể đọc thẻ. Vui lòng thử lại!");
+                });
+
+                ndef.addEventListener("reading", ({ serialNumber, message }) => {
+                    // 1. Chuyển đổi mã DEC
+                    document.getElementById('hexRaw').innerText = serialNumber || "Không có UID";
+                    let decValue = 0;
+                    if (serialNumber) {
+                        let bytes = serialNumber.split(':');
+                        let reversedHex = bytes.reverse().join('');
+                        decValue = parseInt(reversedHex, 16);
+                    }
+                    document.getElementById('decResult').innerText = decValue;
+
+                    // 2. Xuất Raw Data
+                    let rawInfo = {
+                        "UID": serialNumber || "N/A",
+                        "Thời gian": new Date().toLocaleTimeString("vi-VN"),
+                        "Records": message.records.length,
+                        "Nội dung": []
+                    };
+                    for (const record of message.records) {
+                        if (record.data) {
+                            const decoder = new TextDecoder(record.encoding || 'utf-8');
+                            rawInfo["Nội dung"].push(decoder.decode(record.data));
+                        }
+                    }
+                    document.getElementById('rawOutput').innerText = JSON.stringify(rawInfo, null, 2);
+
+                    // 3. Thêm vào Lịch Sử
+                    if (decValue !== 0) {
+                        const historyList = document.getElementById('historyList');
+                        // Xóa dòng thông báo trống nếu có
+                        if (historyList.children.length === 1 && historyList.children[0].innerText.includes("Chưa có lịch sử")) {
+                            historyList.innerHTML = "";
+                        }
+                        const li = document.createElement('li');
+                        li.className = 'history-item';
+                        li.innerHTML = `
+                            <span><b>${decValue}</b> <small style="color:#86868b">(${serialNumber})</small></span>
+                            <button class="copy-btn" style="padding: 4px 10px; font-size: 12px;" onclick="copyDecValue('${decValue}')">Copy</button>
+                        `;
+                        historyList.insertBefore(li, historyList.firstChild);
+                    }
+                });
+
+            } catch (error) {
+                alert("Lỗi cấp quyền hoặc kết nối NFC: " + error);
             }
         });
+
+        // Ghi dữ liệu NFC
+        async function writeNfcTag() {
+            const text = document.getElementById('writeInput').value;
+            if (!text) {
+                alert("Vui lòng nhập nội dung cần ghi!");
+                return;
+            }
+            if (!('NDEFReader' in window)) {
+                alert("Trình duyệt không hỗ trợ Web NFC!");
+                return;
+            }
+
+            try {
+                const writer = new NDEFReader();
+                alert("Hãy chạm thẻ NFC trắng vào mặt lưng điện thoại ngay bây giờ...");
+                await writer.write(text);
+                alert(" Ghi dữ liệu vào thẻ thành công!");
+            } catch (error) {
+                alert("Lỗi khi ghi thẻ: " + error);
+            }
+        }
     </script>
 </body>
 </html>
