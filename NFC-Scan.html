@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đọc & Chuyển Đổi Thẻ NFC</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+            padding: 30px 20px;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        button {
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .result-box {
+            background: #f2f2f7;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        .label {
+            font-size: 14px;
+            color: #86868b;
+            margin-bottom: 5px;
+        }
+        .val-hex {
+            font-family: monospace;
+            font-size: 18px;
+            color: #333;
+        }
+        .val-dec {
+            font-size: 32px;
+            font-weight: bold;
+            color: #34c759;
+            margin: 5px 0 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>QUÉT THẺ NFC</h2>
+        <button id="scanBtn"> Bắt Đầu Quét</button>
+        
+        <div class="result-box">
+            <div class="label">Mã Hex gốc (MSB):</div>
+            <div class="val-hex" id="hexRaw">Chưa quét</div>
+        </div>
+
+        <div class="result-box">
+            <div class="label">Mã DEC đảo ngược (Little-Endian):</div>
+            <div class="val-dec" id="decResult">0</div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('scanBtn').addEventListener('click', async () => {
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    document.getElementById('hexRaw').innerText = "Hãy chạm thẻ vào lưng máy...";
+                    
+                    ndef.addEventListener("readingerror", () => {
+                        alert("Không thể đọc thẻ. Vui lòng thử lại!");
+                    });
+
+                    ndef.addEventListener("reading", ({ serialNumber }) => {
+                        // serialNumber nhận được có dạng "34:4e:f5:23"
+                        document.getElementById('hexRaw').innerText = serialNumber;
+                        
+                        // Tách chuỗi hex thành mảng byte
+                        let bytes = serialNumber.split(':');
+                        
+                        // Đảo ngược mảng byte (Little-Endian)
+                        let reversedHex = bytes.reverse().join('');
+                        
+                        // Chuyển từ Hex sang Decimal
+                        let decValue = parseInt(reversedHex, 16);
+                        
+                        document.getElementById('decResult').innerText = decValue;
+                    });
+                } catch (error) {
+                    alert("Lỗi cấp quyền hoặc kết nối: " + error);
+                }
+            } else {
+                alert("Trình duyệt không hỗ trợ Web NFC. Hãy dùng Google Chrome trên Android!");
+            }
+        });
+    </script>
+</body>
+</html>
